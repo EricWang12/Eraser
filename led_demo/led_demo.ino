@@ -23,6 +23,8 @@ const byte col[] = {
   COL_1,COL_2, COL_3, COL_4, COL_5, COL_6, COL_7, COL_8
 };
 
+
+
 // The display buffer
 // It's prefilled with a smiling face (1 = ON, 0 = OFF)
 byte ALL[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
@@ -53,8 +55,44 @@ byte W[] = {B00000000,B10000010,B10010010,B01010100,B01010100,B00101000,B0000000
 byte X[] = {B00000000,B01000010,B00100100,B00011000,B00011000,B00100100,B01000010,B00000000};
 byte Y[] = {B00000000,B01000100,B00101000,B00010000,B00010000,B00010000,B00010000,B00000000};
 byte Z[] = {B00000000,B00111100,B00000100,B00001000,B00010000,B00100000,B00111100,B00000000};
+byte unsigned encode[] = {B00000000,B00000001,B00000011,B00000111,B00001111,B00011111,B00111111,B01111111, B11111111};
+
 
 float timeCount = 0;
+
+byte ret[8] = {};
+
+
+
+void getMatrix(int UL, int UR, int LL, int LR){
+  ret[8] = {};
+  int count = 0;
+  byte unsigned Temp = 0xFF;
+  
+  for(int i = UL ; i > 0; i--){   
+    ret[count] |=  ~encode[8-i];
+    count ++;
+  }
+  count = 0;
+  for(int i = UR ; i > 0 ; i--){   
+    ret[count] |=  encode[i];
+    count ++;
+  }
+
+  count = 7;
+  for(int i = LL ; i > 0 ; i--){   
+    ret[count] |=  ~encode[8-i];
+    count --;
+  }
+  count = 7;
+  for(int i = LR ; i > 0 ; i--){   
+    ret[count] |=  encode[i];
+    count --;
+  }
+  for(int i = 0 ; i < 8; i++){
+    ret[i] = ~ret[i];
+  }
+}
 
 void setup() 
 {
@@ -70,6 +108,7 @@ void setup()
     pinMode(A1, OUTPUT);
     pinMode(A2, OUTPUT);
     pinMode(A3, OUTPUT);
+    getMatrix(6,1,3   ,2);
 }
 
 void loop() {
@@ -77,45 +116,7 @@ void loop() {
 delay(5);
 timeCount += 1;
 
-if(timeCount <  200) 
-{
-drawScreen(A);
-} 
-else if (timeCount <  400) 
-{
-drawScreen(R);
-} 
-else if (timeCount <  600) 
-{
-drawScreen(D);
-} 
-else if (timeCount <  800) 
-{
-drawScreen(U);
-} 
-else if (timeCount <  1000) 
-{
-drawScreen(I);
-} 
-else if (timeCount <  1200) 
-{
-drawScreen(N);
-} 
-else if (timeCount <  1400) {
-  drawScreen(O);
-} 
-else if (timeCount <  1600) 
-{
-drawScreen(ALL);
-} 
-else if (timeCount <  1800) 
-{
-drawScreen(ALL);
-} 
-else {
-// back to the start
-timeCount = 0;
-}
+drawScreen(ret);
 }
  void  drawScreen(byte buffer2[])
  { 
@@ -139,6 +140,26 @@ timeCount = 0;
         // otherwise last row will intersect with next row
     }
 }
+
+// 
+/*
+  3,2,1,1
+
+
+
+
+
+
+  11100011
+  11000001
+  10000000
+
+
+  10000001
+
+
+
+*/
 // 
   /* this is siplest resemplation how for loop is working with each row.
     digitalWrite(COL_1, (~b >> 0) & 0x01); // Get the 1st bit: 10000000
