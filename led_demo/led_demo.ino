@@ -1,3 +1,8 @@
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+
 #define ROW_1 8
 #define ROW_2 11
 #define ROW_3 6
@@ -15,7 +20,17 @@
 #define COL_6 4
 #define COL_7 A0
 #define COL_8 13
+/*
+  3                             4
+  |-----------------------------|
+  |                  |  | ///// |
+  |                  |  | \\\\\ |
+  |                  |  | ///// |
+  |-----------------------------|
+  2                             1
 
+
+*/
 const byte rows[] = {
     ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6, ROW_7, ROW_8
 };
@@ -28,33 +43,7 @@ const byte col[] = {
 // The display buffer
 // It's prefilled with a smiling face (1 = ON, 0 = OFF)
 byte ALL[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
-byte EX[] = {B00000000,B00010000,B00010000,B00010000,B00010000,B00000000,B00010000,B00000000};
-byte A[] = {  B00000000,B00111100,B01100110,B01100110,B01111110,B01100110,B01100110,B01100110};
-byte B[] = {B01111000,B01001000,B01001000,B01110000,B01001000,B01000100,B01000100,B01111100};
-byte C[] = {B00000000,B00011110,B00100000,B01000000,B01000000,B01000000,B00100000,B00011110};
-byte D[] = {B00000000,B00111000,B00100100,B00100010,B00100010,B00100100,B00111000,B00000000};
-byte E[] = {B00000000,B00111100,B00100000,B00111000,B00100000,B00100000,B00111100,B00000000};
-byte F[] = {B00000000,B00111100,B00100000,B00111000,B00100000,B00100000,B00100000,B00000000};
-byte G[] = {B00000000,B00111110,B00100000,B00100000,B00101110,B00100010,B00111110,B00000000};
-byte H[] = {B00000000,B00100100,B00100100,B00111100,B00100100,B00100100,B00100100,B00000000};
-byte I[] = {B00000000,B00111000,B00010000,B00010000,B00010000,B00010000,B00111000,B00000000};
-byte J[] = {B00000000,B00011100,B00001000,B00001000,B00001000,B00101000,B00111000,B00000000};
-byte K[] = {B00000000,B00100100,B00101000,B00110000,B00101000,B00100100,B00100100,B00000000};
-byte L[] = {B00000000,B00100000,B00100000,B00100000,B00100000,B00100000,B00111100,B00000000};
-byte M[] = {B00000000,B00000000,B01000100,B10101010,B10010010,B10000010,B10000010,B00000000};
-byte N[] = {B00000000,B00100010,B00110010,B00101010,B00100110,B00100010,B00000000,B00000000};
-byte O[] = {B00000000,B00111100,B01000010,B01000010,B01000010,B01000010,B00111100,B00000000};
-byte P[] = {B00000000,B00111000,B00100100,B00100100,B00111000,B00100000,B00100000,B00000000};
-byte Q[] = {B00000000,B00111100,B01000010,B01000010,B01000010,B01000110,B00111110,B00000001};
-byte R[] = {B00000000,B00111000,B00100100,B00100100,B00111000,B00100100,B00100100,B00000000};
-byte S[] = {B00000000,B00111100,B00100000,B00111100,B00000100,B00000100,B00111100,B00000000};
-byte T[] = {B00000000,B01111100,B00010000,B00010000,B00010000,B00010000,B00010000,B00000000};
-byte U[] = {B00000000,B01000010,B01000010,B01000010,B01000010,B00100100,B00011000,B00000000};
-byte V[] = {B00000000,B00100010,B00100010,B00100010,B00010100,B00010100,B00001000,B00000000};
-byte W[] = {B00000000,B10000010,B10010010,B01010100,B01010100,B00101000,B00000000,B00000000};
-byte X[] = {B00000000,B01000010,B00100100,B00011000,B00011000,B00100100,B01000010,B00000000};
-byte Y[] = {B00000000,B01000100,B00101000,B00010000,B00010000,B00010000,B00010000,B00000000};
-byte Z[] = {B00000000,B00111100,B00000100,B00001000,B00010000,B00100000,B00111100,B00000000};
+byte ZERO[] = {B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000};
 byte unsigned encode[] = {B00000000,B00000001,B00000011,B00000111,B00001111,B00011111,B00111111,B01111111, B11111111};
 
 
@@ -64,11 +53,30 @@ byte ret[8] = {};
 
 
 
+const int bias[] = {800,1100,0,300};
+const float slope[] = {1,1,0.55,0.65};
+
+const float VCC = 3.3; 
+const float R_DIV = 1000.0; 
+int LEDPin[] = {12, 11, 10, 9, 8, 7, 6, 5, 4}; // column pin (cathode) of LED Matrix
+const int ledNum = sizeof(LEDPin) / sizeof(int);
+const int maxForce = 2000;
+const int maxIndForce = 1300;
+const int max_level = 7;
+const int caliberation = 600;
+//LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
+
+
+
 void getMatrix(int UL, int UR, int LL, int LR){
   ret[8] = {};
   int count = 0;
   byte unsigned Temp = 0xFF;
   
+  for(int i = 0 ; i < 8; i++){
+    ret[i] = 0;
+  }
+  //ret = {B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000};
   for(int i = UL ; i > 0; i--){   
     ret[count] |=  ~encode[8-i];
     count ++;
@@ -94,31 +102,126 @@ void getMatrix(int UL, int UR, int LL, int LR){
   }
 }
 
-void setup() 
+
+void setup()
 {
-    // Open serial port
-    Serial.begin(9600);
-    
-    // Set all used pins to OUTPUT
-    // This is very important! If the pins are set to input
-    // the display will be very dim.
+
+  //lcd.begin(20,4);         // initialize the lcd for 20 chars 4 lines, turn on backlight
+  // Print a message to the LCD.
+  // lcd.backlight();
+  // lcd.setCursor(1, 0);
+  // lcd.print("hello everyone");
+  // lcd.setCursor(1, 1);
+  // lcd.print("konichiwaa");
+  Serial.begin(9600); // initialize serial communication
     for (byte i = 2; i <= 13; i++)
-        pinMode(i, OUTPUT);
-    pinMode(A0, OUTPUT);
-    pinMode(A1, OUTPUT);
-    pinMode(A2, OUTPUT);
-    pinMode(A3, OUTPUT);
-    getMatrix(6,1,3   ,2);
+      pinMode(i, OUTPUT);
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+  pinMode(A4, INPUT);
+  pinMode(A5, INPUT);
+  pinMode(A6, INPUT);
+  pinMode(A7, INPUT);
+  //Serial.println("Bluetooth device active, waiting for connections...");
+  getMatrix(2,1,6,3);
 }
 
-void loop() {
-  // This could be rewritten to not use a delay, which would make it appear brighter
-delay(5);
-timeCount += 1;
+void loop()
+{
+  // wait for a BLE central
+  //BLEDevice central = BLE.central();
 
-drawScreen(ret);
+  int force1 = (int)getForce(analogRead(A4));
+  int force2 = (int)getForce(analogRead(A5));
+  int force3 = (int)getForce(analogRead(A6));
+  int force4 = (int)getForce(analogRead(A7));
+  
+  force1 = slope[0]*force1 - bias[0] < 0? 0: slope[0]*force1 - bias[0];
+  force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
+  force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
+  force4 = slope[3]*force4 - bias[3] < 0? 0: slope[3]*force4 - bias[3];
+  
+  int totalForce = force1 + force2 + force3 + force4;// < caliberation ? 0 : force1 + force2 + force3 + force4  - caliberation;
+  int level;
+  if (totalForce >= maxForce)level = ledNum;
+  else level = map(totalForce, 0, maxForce, 0, ledNum);
+  Serial.print("" );
+  Serial.print(force1);
+  Serial.print(" " );
+  Serial.print(force2);
+    Serial.print(" " );
+  //Serial.print("  #3: " );
+  Serial.print(force3);
+    Serial.print(" " );
+  //Serial.print("  #4: " );
+  Serial.print(force4);
+   Serial.print(" " );
+  //Serial.print("    total: " );
+  Serial.println(totalForce);
+  int i = 0;
+
+  int level_1 = force1 >= maxForce ? max_level : map(force1, 0, maxIndForce, 0, max_level);
+  int level_2 = force2 >= maxForce ? max_level : map(force2, 0, maxIndForce, 0, max_level);
+  int level_3 = force3 >= maxForce ? max_level :map(force3, 0, maxIndForce, 0, max_level);
+  int level_4 = force4 >= maxForce ? max_level :map(force4, 0, maxIndForce, 0, max_level);
+  
+  
+  getMatrix( level_2,level_3, level_1, level_4);
+  drawScreen(ret);
+  delay(5);
+  // if a central is connected to the peripheral:
 }
- void  drawScreen(byte buffer2[])
+
+
+float getForce(int fsrADC ) {
+
+  float force = 0;
+  if (fsrADC != 0) // If the analog reading is non-zero
+  {
+    // Use ADC reading to calculate voltage:
+    float fsrV = fsrADC * VCC / 1023.0;
+    // Use voltage and static resistor value to
+    // calculate FSR resistance:
+    float fsrR = R_DIV * (VCC / fsrV - 1.0);
+    // Serial.println("Resistance: " + String(fsrR) + " ohms");
+    // Guesstimate force based on slopes in figure 3 of
+    // FSR datasheet:
+    //float force;
+    float fsrG = 1.0 / fsrR; // Calculate conductance
+    // Break parabolic curve down into two linear slopes:
+    if (fsrR <= 600)
+      force = (fsrG - 0.00075) / 0.00000032639;
+    else
+      force =  fsrG / 0.0000003857142;
+  }
+
+  return force;
+}
+void  drawScreen(byte buffer2[])
+ { 
+   // Turn on each row in series
+    for (byte i = 0; i < 8; i++)        // count next row
+     {
+        digitalWrite(rows[i], HIGH);    //initiate whole row
+        for (byte a = 0; a < 8; a++)    // count next row
+        {
+          // if You set (~buffer2[i] >> a) then You will have positive
+          digitalWrite(col[a], (buffer2[i] >> a) & 0x01); // initiate whole column
+          
+          delayMicroseconds(100);       // uncoment deley for diferent speed of display
+          //delayMicroseconds(1000);
+          //delay(10);
+          //delay(100);
+          
+          //digitalWrite(col[a], 1);      // reset whole column
+        }
+        digitalWrite(rows[i], LOW);     // reset whole row
+        // otherwise last row will intersect with next row
+    }
+}
+void  undrawScreen(byte buffer2[])
  { 
    // Turn on each row in series
     for (byte i = 0; i < 8; i++)        // count next row
@@ -140,34 +243,3 @@ drawScreen(ret);
         // otherwise last row will intersect with next row
     }
 }
-
-// 
-/*
-  3,2,1,1
-
-
-
-
-
-
-  11100011
-  11000001
-  10000000
-
-
-  10000001
-
-
-
-*/
-// 
-  /* this is siplest resemplation how for loop is working with each row.
-    digitalWrite(COL_1, (~b >> 0) & 0x01); // Get the 1st bit: 10000000
-    digitalWrite(COL_2, (~b >> 1) & 0x01); // Get the 2nd bit: 01000000
-    digitalWrite(COL_3, (~b >> 2) & 0x01); // Get the 3rd bit: 00100000
-    digitalWrite(COL_4, (~b >> 3) & 0x01); // Get the 4th bit: 00010000
-    digitalWrite(COL_5, (~b >> 4) & 0x01); // Get the 5th bit: 00001000
-    digitalWrite(COL_6, (~b >> 5) & 0x01); // Get the 6th bit: 00000100
-    digitalWrite(COL_7, (~b >> 6) & 0x01); // Get the 7th bit: 00000010
-    digitalWrite(COL_8, (~b >> 7) & 0x01); // Get the 8th bit: 00000001
-}*/
