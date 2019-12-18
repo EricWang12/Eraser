@@ -59,7 +59,7 @@ two methods are supported:
 ```python
     e = Eraser()
     # returns a number, the total force of 4
-	e.get_total_force()
+    e.get_total_force()
 
     # returns an list of 4 forces
     e.get_separate_forces()
