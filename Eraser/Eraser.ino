@@ -1,6 +1,7 @@
 
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+// #include <Wire.h>
+// #include <LiquidCrystal_I2C.h>
+#include <ArduinoBLE.h>
 
 
 #define ROW_1 8
@@ -20,7 +21,6 @@
 #define COL_6 4
 #define COL_7 A0
 #define COL_8 13
-
 /*
   3                             4
   |-----------------------------|
@@ -32,7 +32,6 @@
 
 
 */
-
 const byte rows[] = {
     ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6, ROW_7, ROW_8
 };
@@ -45,6 +44,7 @@ const byte col[] = {
 // The display buffer
 // It's prefilled with a smiling face (1 = ON, 0 = OFF)
 byte ALL[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
+byte ZERO[] = {B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000};
 byte unsigned encode[] = {B00000000,B00000001,B00000011,B00000111,B00001111,B00011111,B00111111,B01111111, B11111111};
 
 
@@ -54,13 +54,16 @@ byte ret[8] = {};
 
 
 
+const int bias[] = {800,1100,0,300};
+const float slope[] = {1,1,0.55,0.65};
+
 const float VCC = 3.3; 
 const float R_DIV = 1000.0; 
 int LEDPin[] = {12, 11, 10, 9, 8, 7, 6, 5, 4}; // column pin (cathode) of LED Matrix
 const int ledNum = sizeof(LEDPin) / sizeof(int);
 const int maxForce = 2000;
-const int maxIndForce = 1000;
-const int max_level = 6;
+const int maxIndForce = 1300;
+const int max_level = 7;
 const int caliberation = 600;
 //LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
@@ -71,6 +74,10 @@ void getMatrix(int UL, int UR, int LL, int LR){
   int count = 0;
   byte unsigned Temp = 0xFF;
   
+  for(int i = 0 ; i < 8; i++){
+    ret[i] = 0;
+  }
+  //ret = {B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000};
   for(int i = UL ; i > 0; i--){   
     ret[count] |=  ~encode[8-i];
     count ++;
@@ -100,14 +107,8 @@ void getMatrix(int UL, int UR, int LL, int LR){
 void setup()
 {
 
-  //lcd.begin(20,4);         // initialize the lcd for 20 chars 4 lines, turn on backlight
-  // Print a message to the LCD.
-  // lcd.backlight();
-  // lcd.setCursor(1, 0);
-  // lcd.print("hello everyone");
-  // lcd.setCursor(1, 1);
-  // lcd.print("konichiwaa");
-  Serial.begin(9600); // initialize serial communication
+
+
     for (byte i = 2; i <= 13; i++)
       pinMode(i, OUTPUT);
   pinMode(A0, OUTPUT);
@@ -118,42 +119,66 @@ void setup()
   pinMode(A5, INPUT);
   pinMode(A6, INPUT);
   pinMode(A7, INPUT);
-  //Serial.println("Bluetooth device active, waiting for connections...");
+
+  // Initialize the BLE stuff
+  BLE.begin();
+	BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
+  getMatrix(2,1,6,3);
 }
 
 void loop()
 {
   // wait for a BLE central
   //BLEDevice central = BLE.central();
-
+  BLEDevice peripheral = BLE.available();
   int force1 = (int)getForce(analogRead(A4));
   int force2 = (int)getForce(analogRead(A5));
   int force3 = (int)getForce(analogRead(A6));
   int force4 = (int)getForce(analogRead(A7));
-  int totalForce = force1 + force2 + force3 + force4 < caliberation ? 0 : force1 + force2 + force3 + force4  - caliberation;
+  
+  force1 = slope[0]*force1 - bias[0] < 0? 0: slope[0]*force1 - bias[0];
+  force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
+  force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
+  force4 = slope[3]*force4 - bias[3] < 0? 0: slope[3]*force4 - bias[3];
+  
+  int totalForce = force1 + force2 + force3 + force4;// < caliberation ? 0 : force1 + force2 + force3 + force4  - caliberation;
   int level;
   if (totalForce >= maxForce)level = ledNum;
   else level = map(totalForce, 0, maxForce, 0, ledNum);
-  Serial.print("#1: " );
-  Serial.print(force1);
-  Serial.print("  #2: " );
-  Serial.print(force2);
-  Serial.print("  #3: " );
-  Serial.print(force3);
-  Serial.print("  #4: " );
-  Serial.print(force4);
-  Serial.print("    total: " );
-  Serial.println(totalForce);
-  int i = 0;
+
+  
+	if (peripheral)
+	{
+
+		BLE.stopScan();
+		SendData(peripheral, force1,force2,force3,force4);
+		BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
+	}
+
+
+  // Serial.print("" );
+  // Serial.print(force1);
+  // Serial.print(" " );
+  // Serial.print(force2);
+  //   Serial.print(" " );
+  // //Serial.print("  #3: " );
+  // Serial.print(force3);
+  //   Serial.print(" " );
+  // //Serial.print("  #4: " );
+  // Serial.print(force4);
+  //  Serial.print(" " );
+  // //Serial.print("    total: " );
+  // Serial.println(totalForce);
 
   int level_1 = force1 >= maxForce ? max_level : map(force1, 0, maxIndForce, 0, max_level);
   int level_2 = force2 >= maxForce ? max_level : map(force2, 0, maxIndForce, 0, max_level);
   int level_3 = force3 >= maxForce ? max_level :map(force3, 0, maxIndForce, 0, max_level);
   int level_4 = force4 >= maxForce ? max_level :map(force4, 0, maxIndForce, 0, max_level);
-
-  getMatrix(level_1, level_2, level_4, level_3);
+  
+  
+  getMatrix( level_2,level_3, level_1, level_4);
   drawScreen(ret);
-  delay(2);
+  delay(5);
   // if a central is connected to the peripheral:
 }
 
@@ -168,7 +193,7 @@ float getForce(int fsrADC ) {
     // Use voltage and static resistor value to
     // calculate FSR resistance:
     float fsrR = R_DIV * (VCC / fsrV - 1.0);
-    Serial.println("Resistance: " + String(fsrR) + " ohms");
+    // Serial.println("Resistance: " + String(fsrR) + " ohms");
     // Guesstimate force based on slopes in figure 3 of
     // FSR datasheet:
     //float force;
@@ -198,9 +223,53 @@ void  drawScreen(byte buffer2[])
           //delay(10);
           //delay(100);
           
+          //digitalWrite(col[a], 1);      // reset whole column
+        }
+        digitalWrite(rows[i], LOW);     // reset whole row
+        // otherwise last row will intersect with next row
+    }
+}
+void  undrawScreen(byte buffer2[])
+ { 
+   // Turn on each row in series
+    for (byte i = 0; i < 8; i++)        // count next row
+     {
+        digitalWrite(rows[i], HIGH);    //initiate whole row
+        for (byte a = 0; a < 8; a++)    // count next row
+        {
+          // if You set (~buffer2[i] >> a) then You will have positive
+          digitalWrite(col[a], (buffer2[i] >> a) & 0x01); // initiate whole column
+          
+          delayMicroseconds(100);       
+          
           digitalWrite(col[a], 1);      // reset whole column
         }
         digitalWrite(rows[i], LOW);     // reset whole row
         // otherwise last row will intersect with next row
     }
+}
+void SendData(BLEDevice peripheral, int force1 , int force2, int force3, int force4){
+  
+	if (!peripheral.connect())
+	{
+		return;
+	}
+
+	if (!peripheral.discoverAttributes())
+	{
+		peripheral.disconnect();
+		return;
+	}
+
+	// retrieve the LED characteristic
+	BLECharacteristic ledCharacteristic = peripheral.characteristic("19b10001-e8f2-537e-4f6c-d104768a1214");
+
+
+	while (peripheral.connected())
+	{
+		int16_t count[] = {force1 ,  force2,  force3,  force4};
+		ledCharacteristic.writeValue(count, 8);
+		delay(1);
+	}
+
 }
