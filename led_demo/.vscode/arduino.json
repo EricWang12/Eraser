@@ -1,5 +1,0 @@
-{
-    "board": "arduino:samd:nano_33_iot",
-    "port": "COM6",
-    "sketch": "led_demo.ino"
-}
