@@ -1,6 +1,7 @@
 
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+// #include <Wire.h>
+// #include <LiquidCrystal_I2C.h>
+#include <ArduinoBLE.h>
 
 
 #define ROW_1 8
@@ -106,14 +107,8 @@ void getMatrix(int UL, int UR, int LL, int LR){
 void setup()
 {
 
-  //lcd.begin(20,4);         // initialize the lcd for 20 chars 4 lines, turn on backlight
-  // Print a message to the LCD.
-  // lcd.backlight();
-  // lcd.setCursor(1, 0);
-  // lcd.print("hello everyone");
-  // lcd.setCursor(1, 1);
-  // lcd.print("konichiwaa");
-  Serial.begin(9600); // initialize serial communication
+
+
     for (byte i = 2; i <= 13; i++)
       pinMode(i, OUTPUT);
   pinMode(A0, OUTPUT);
@@ -124,7 +119,9 @@ void setup()
   pinMode(A5, INPUT);
   pinMode(A6, INPUT);
   pinMode(A7, INPUT);
-  //Serial.println("Bluetooth device active, waiting for connections...");
+
+  BLE.begin();
+	BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
   getMatrix(2,1,6,3);
 }
 
@@ -132,7 +129,7 @@ void loop()
 {
   // wait for a BLE central
   //BLEDevice central = BLE.central();
-
+  BLEDevice peripheral = BLE.available();
   int force1 = (int)getForce(analogRead(A4));
   int force2 = (int)getForce(analogRead(A5));
   int force3 = (int)getForce(analogRead(A6));
@@ -147,20 +144,30 @@ void loop()
   int level;
   if (totalForce >= maxForce)level = ledNum;
   else level = map(totalForce, 0, maxForce, 0, ledNum);
-  Serial.print("" );
-  Serial.print(force1);
-  Serial.print(" " );
-  Serial.print(force2);
-    Serial.print(" " );
-  //Serial.print("  #3: " );
-  Serial.print(force3);
-    Serial.print(" " );
-  //Serial.print("  #4: " );
-  Serial.print(force4);
-   Serial.print(" " );
-  //Serial.print("    total: " );
-  Serial.println(totalForce);
-  int i = 0;
+
+  
+	if (peripheral)
+	{
+
+		BLE.stopScan();
+		SendData(peripheral, force1,force2,force3,force4);
+		BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
+	}
+
+
+  // Serial.print("" );
+  // Serial.print(force1);
+  // Serial.print(" " );
+  // Serial.print(force2);
+  //   Serial.print(" " );
+  // //Serial.print("  #3: " );
+  // Serial.print(force3);
+  //   Serial.print(" " );
+  // //Serial.print("  #4: " );
+  // Serial.print(force4);
+  //  Serial.print(" " );
+  // //Serial.print("    total: " );
+  // Serial.println(totalForce);
 
   int level_1 = force1 >= maxForce ? max_level : map(force1, 0, maxIndForce, 0, max_level);
   int level_2 = force2 >= maxForce ? max_level : map(force2, 0, maxIndForce, 0, max_level);
@@ -232,14 +239,36 @@ void  undrawScreen(byte buffer2[])
           // if You set (~buffer2[i] >> a) then You will have positive
           digitalWrite(col[a], (buffer2[i] >> a) & 0x01); // initiate whole column
           
-          delayMicroseconds(100);       // uncoment deley for diferent speed of display
-          //delayMicroseconds(1000);
-          //delay(10);
-          //delay(100);
+          delayMicroseconds(100);       
           
           digitalWrite(col[a], 1);      // reset whole column
         }
         digitalWrite(rows[i], LOW);     // reset whole row
         // otherwise last row will intersect with next row
     }
+}
+void SendData(BLEDevice peripheral, int force1 , int force2, int force3, int force4){
+  
+	if (!peripheral.connect())
+	{
+		return;
+	}
+
+	if (!peripheral.discoverAttributes())
+	{
+		peripheral.disconnect();
+		return;
+	}
+
+	// retrieve the LED characteristic
+	BLECharacteristic ledCharacteristic = peripheral.characteristic("19b10001-e8f2-537e-4f6c-d104768a1214");
+
+
+	while (peripheral.connected())
+	{
+		int16_t count[] = {force1 ,  force2,  force3,  force4};
+		ledCharacteristic.writeValue(count, 8);
+		delay(1);
+	}
+
 }
