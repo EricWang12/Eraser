@@ -58,7 +58,11 @@ two methods are supported:
 
 ```python
     e = Eraser()
+<<<<<<< Updated upstream
     # returns a number, the total force of 4
+=======
+    # returns a number, the total force of 4       
+>>>>>>> Stashed changes
     e.get_total_force()
 
     # returns an list of 4 forces

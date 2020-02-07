@@ -23,7 +23,7 @@ void setup()
 	while (!Serial)
 		;
 
-
+	Serial.println("starting BLE!");
 	// begin initialization
 	if (!BLE.begin())
 	{
