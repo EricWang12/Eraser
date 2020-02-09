@@ -4,6 +4,8 @@
 #include <ArduinoBLE.h>
 
 
+
+
 #define ROW_1 8
 #define ROW_2 11
 #define ROW_3 6
@@ -32,6 +34,12 @@
 
 
 */
+
+
+
+boolean serialDebug = true;
+
+
 const byte rows[] = {
     ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6, ROW_7, ROW_8
 };
@@ -109,8 +117,8 @@ void setup()
 
 
 
-    for (byte i = 2; i <= 13; i++)
-      pinMode(i, OUTPUT);
+  for (byte i = 2; i <= 13; i++)
+    pinMode(i, OUTPUT);
   pinMode(A0, OUTPUT);
   pinMode(A1, OUTPUT);
   pinMode(A2, OUTPUT);
@@ -119,6 +127,13 @@ void setup()
   pinMode(A5, INPUT);
   pinMode(A6, INPUT);
   pinMode(A7, INPUT);
+
+  if(serialDebug) {
+    Serial.begin(9600);
+	  while (!Serial)
+		;
+  }
+
 
   // Initialize the BLE stuff
   BLE.begin();
@@ -130,7 +145,24 @@ void loop()
 {
   // wait for a BLE central
   //BLEDevice central = BLE.central();
+
+
   BLEDevice peripheral = BLE.available();
+  if (peripheral)
+	{
+
+		BLE.stopScan();
+		SendData(peripheral);
+		BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
+	}
+
+
+  delay(50);
+  // if a central is connected to the peripheral:
+}
+
+void getForces(int16_t* data){
+  
   int16_t force1 = (int16_t)getForce(analogRead(A4));
   int16_t force2 = (int16_t)getForce(analogRead(A5));
   int16_t force3 = (int16_t)getForce(analogRead(A6));
@@ -140,48 +172,39 @@ void loop()
   force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
   force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
   force4 = slope[3]*force4 - bias[3] < 0? 0: slope[3]*force4 - bias[3];
-  
+    
   int totalForce = force1 + force2 + force3 + force4;// < caliberation ? 0 : force1 + force2 + force3 + force4  - caliberation;
   int level;
   if (totalForce >= maxForce)level = ledNum;
   else level = map(totalForce, 0, maxForce, 0, ledNum);
 
-  
-	if (peripheral)
-	{
-
-		BLE.stopScan();
-		SendData(peripheral, 105,28,36,192);
-		BLE.scanForUuid("19b10000-e8f2-537e-4f6c-d104768a1214");
-	}
-
-/*
-  Serial.print("" );
-  Serial.print(force1);
-  Serial.print(" " );
-  Serial.print(force2);
+  if(serialDebug) {
+    Serial.print(force1);
     Serial.print(" " );
-  //Serial.print("  #3: " );
-  Serial.print(force3);
+    Serial.print(force2);
     Serial.print(" " );
-  //Serial.print("  #4: " );
-  Serial.print(force4);
-   Serial.print(" " );
-  //Serial.print("    total: " );
-  Serial.println(totalForce);
-*/
-  int level_1 = force1 >= maxForce ? max_level : map(force1, 0, maxIndForce, 0, max_level);
-  int level_2 = force2 >= maxForce ? max_level : map(force2, 0, maxIndForce, 0, max_level);
-  int level_3 = force3 >= maxForce ? max_level :map(force3, 0, maxIndForce, 0, max_level);
-  int level_4 = force4 >= maxForce ? max_level :map(force4, 0, maxIndForce, 0, max_level);
-  
-  
+    Serial.print(force3);
+    Serial.print(" " );
+    Serial.print(force4);
+    Serial.print(" " );
+
+    Serial.println(totalForce);
+  }
+
+  int level_1 = force1 >= maxIndForce ? max_level : map(force1, 0, maxIndForce, 0, max_level);
+  int level_2 = force2 >= maxIndForce ? max_level : map(force2, 0, maxIndForce, 0, max_level);
+  int level_3 = force3 >= maxIndForce ? max_level :map(force3, 0, maxIndForce, 0, max_level);
+  int level_4 = force4 >= maxIndForce ? max_level :map(force4, 0, maxIndForce, 0, max_level);
+    
   getMatrix( level_2,level_3, level_1, level_4);
   drawScreen(ret);
-  delay(5);
-  // if a central is connected to the peripheral:
-}
 
+  data[0] = force1;
+  data[1] = force2;
+  data[2] = force3;
+  data[3] = force4;
+
+}
 
 float getForce(int fsrADC ) {
 
@@ -248,8 +271,8 @@ void  undrawScreen(byte buffer2[])
         // otherwise last row will intersect with next row
     }
 }
-void SendData(BLEDevice peripheral, int16_t force1 , int16_t force2, int16_t force3, int16_t force4){
-  
+void SendData(BLEDevice peripheral){
+  if(serialDebug) Serial.println("sending data");
 	if (!peripheral.connect())
 	{
 		return;
@@ -267,9 +290,13 @@ void SendData(BLEDevice peripheral, int16_t force1 , int16_t force2, int16_t for
 
 	while (peripheral.connected())
 	{
-		int16_t count[] = {force1 ,  force2,  force3,  force4};
+
+		int16_t count[4];
+    getForces(&count[0]);
 		ledCharacteristic.writeValue(count, 8);
-		delay(100);
+		delay(1);
+    //peripheral.disconnect();
 	}
+
 
 }

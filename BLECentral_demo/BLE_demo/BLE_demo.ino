@@ -46,13 +46,13 @@ void controlLed(BLEDevice peripheral)
 	BLECharacteristic ledCharacteristic = peripheral.characteristic("19b10001-e8f2-537e-4f6c-d104768a1214");
 	//ledCharacteristic.valueSize = 100;
 
-	while (peripheral.connected())
+	if (peripheral.connected())
 	{
 
 
 		int16_t count[] = {105, 251, 400, 600};
 		ledCharacteristic.writeValue(count, 8);
-
+		
 		delay(100);
 	}
 }

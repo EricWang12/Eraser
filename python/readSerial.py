@@ -8,7 +8,7 @@ class Eraser:
 
 	def __init__(self):
 		# Make sure the COM port is right with the Arduino!!
-		self.COM = 'COM8'
+		self.COM = 'COM9'
 		self.serial = 9600
 		self.arduino = serial.Serial(self.COM, self.serial, timeout=.1)
 		time.sleep(1)  # give the connection a second to settle
