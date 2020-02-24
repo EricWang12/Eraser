@@ -37,7 +37,7 @@
 
 
 
-boolean serialDebug = true;
+boolean serialDebug = false;
 
 
 const byte rows[] = {
@@ -163,11 +163,15 @@ void loop()
 
 void getForces(int16_t* data){
   
-  int16_t force1 = (int16_t)getForce(analogRead(A4));
-  int16_t force2 = (int16_t)getForce(analogRead(A5));
-  int16_t force3 = (int16_t)getForce(analogRead(A6));
-  int16_t force4 = (int16_t)getForce(analogRead(A7));
+  int16_t force1 = (int16_t)analogRead(A4);//getForce(analogRead(A4));
+  int16_t force2 = (int16_t)analogRead(A5);//getForce(analogRead(A5));
+  int16_t force3 = (int16_t)analogRead(A6);//getForce(analogRead(A6));
+  int16_t force4 = (int16_t)analogRead(A7);//getForce(analogRead(A7));
   
+  data[0] = force1;
+  data[1] = force2;
+  data[2] = force3;
+  data[3] = force4;
   force1 = slope[0]*force1 - bias[0] < 0? 0: slope[0]*force1 - bias[0];
   force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
   force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
@@ -196,17 +200,13 @@ void getForces(int16_t* data){
   int level_3 = force3 >= maxIndForce ? max_level :map(force3, 0, maxIndForce, 0, max_level);
   int level_4 = force4 >= maxIndForce ? max_level :map(force4, 0, maxIndForce, 0, max_level);
     
-  getMatrix( level_2,level_3, level_1, level_4);
-  drawScreen(ret);
+  // getMatrix( level_2,level_3, level_1, level_4);
+  // drawScreen(ret);
 
-  data[0] = force1;
-  data[1] = force2;
-  data[2] = force3;
-  data[3] = force4;
 
 }
 
-float getForce(int fsrADC ) {
+float calculateForce(int fsrADC ) {
 
   float force = 0;
   if (fsrADC != 0) // If the analog reading is non-zero
@@ -291,9 +291,9 @@ void SendData(BLEDevice peripheral){
 	while (peripheral.connected())
 	{
 
-		int16_t count[4];
-    getForces(&count[0]);
-		ledCharacteristic.writeValue(count, 8);
+		int16_t data[4];
+    getForces(&data[0]);
+		ledCharacteristic.writeValue(data, 8);
 		delay(1);
     //peripheral.disconnect();
 	}
