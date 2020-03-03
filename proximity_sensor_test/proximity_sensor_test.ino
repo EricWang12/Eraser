@@ -61,7 +61,9 @@ void setup()
 			Serial.println("failed to initialize APDS9960 device! Please check your wiring.");
 		}
 		else Serial.println("APDS9960 Device initialized!");
+
 		apds.setProxGain(APDS9960_PGAIN_1X);
+
 		//enable proximity mode
 		apds.enableProximity(true);
 

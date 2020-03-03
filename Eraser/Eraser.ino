@@ -172,10 +172,10 @@ void getForces(int16_t* data){
   data[1] = force2;
   data[2] = force3;
   data[3] = force4;
-  force1 = slope[0]*force1 - bias[0] < 0? 0: slope[0]*force1 - bias[0];
-  force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
-  force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
-  force4 = slope[3]*force4 - bias[3] < 0? 0: slope[3]*force4 - bias[3];
+  // force1 = slope[0]*force1 - bias[0] < 0? 0: slope[0]*force1 - bias[0];
+  // force2 = slope[1]*force2 - bias[1] < 0? 0: slope[1]*force2 - bias[1];
+  // force3 = slope[2]*force3 - bias[2] < 0? 0: slope[2]*force3 - bias[2];
+  // force4 = slope[3]*force4 - bias[3] < 0? 0: slope[3]*force4 - bias[3];
     
   int totalForce = force1 + force2 + force3 + force4;// < caliberation ? 0 : force1 + force2 + force3 + force4  - caliberation;
   int level;

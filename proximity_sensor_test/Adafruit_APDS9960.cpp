@@ -191,9 +191,11 @@ apds9960AGain_t Adafruit_APDS9960::getADCGain() {
  */
 void Adafruit_APDS9960::setProxGain(apds9960PGain_t pGain) {
   _control.PGAIN = pGain;
-
+  _config3.PCMP = 0;
   /* Update the timing register */
   write8(APDS9960_CONTROL, _control.get());
+  write8(APDS9960_CONFIG3, _config3.get());
+
 }
 
 /*!
