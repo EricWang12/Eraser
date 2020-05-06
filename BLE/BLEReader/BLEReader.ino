@@ -19,7 +19,7 @@ BLECharacteristic switchCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1214", B
 
 void setup()
 {
-	Serial.begin(9600);
+	Serial.begin(115200);
 	while (!Serial)
 		;
 

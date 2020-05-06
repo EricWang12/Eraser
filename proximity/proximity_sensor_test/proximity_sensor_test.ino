@@ -1,16 +1,18 @@
 #include <Wire.h>
 #include "Adafruit_VL6180X.h"
 #include "Adafruit_VCNL4010.h"
-// #include "Adafruit_VCNL4040.h"
+#include <Adafruit_VCNL4040.h>
 #include "Adafruit_APDS9960.h"
 
 
 #define APDS9960
 #define POLOLU
-
+#define VCNL4010
+#define VCNL4040
+// #define VL6180X
 
 Adafruit_APDS9960 apds;
-// Adafruit_VCNL4040 vcnl4040 = Adafruit_VCNL4040();
+
 
 Adafruit_VCNL4010 vcnl;
 Adafruit_VL6180X vl = Adafruit_VL6180X();
@@ -27,27 +29,31 @@ void setup()
 	}
 
 	TwoWire tw = TwoWire(0, A4, A5);
-	Serial.println("Adafruit VL6180x test!");
-	if (!vl.begin(&Wire))
-	{
-		Serial.println("Failed to find sensor VL6180x");
-		while (1)
-			;
-	}
-	Serial.println("VL6180x Sensor found!");
+	#if defined(VL6180X)
+		Serial.println("Adafruit VL6180x test!");
+		if (!vl.begin(&Wire))
+		{
+			Serial.println("Failed to find sensor VL6180x");
+			while (1)
+				;
+		}
+		Serial.println("VL6180x Sensor found!");
+	#endif
 
-	Serial.println("VCNL4010 test");
 
-	if (!vcnl.begin())
-	{
-		Serial.println("VCNL4010 Sensor not found :(");
-		while (1)
-			;
-	}
-	Serial.println("Found VCNL4010");
-
+	#if defined(VCNL4010)
+		Serial.println("VCNL4010 test");
+		if (!vcnl.begin())
+		{
+			Serial.println("VCNL4010 Sensor not found :(");
+			while (1)
+				;
+		}
+		Serial.println("Found VCNL4010");
+	#endif
 
 	#if defined(VCNL4040)
+		Adafruit_VCNL4040 vcnl4040 = Adafruit_VCNL4040();
 		Serial.println("Adafruit VCNL4040 Config demo");
 
 		if (!vcnl4040.begin()) {
@@ -80,14 +86,15 @@ void loop()
 	// Serial.print("Lux: ");
 	// Serial.println(lux);
 
-	uint8_t range = vl.readRange();
-	uint8_t status = vl.readRangeStatus();
+	// uint8_t range = ;
+	// uint8_t status = vl.readRangeStatus();
 
-
-	Serial.print("VL6180x Range: ");  Serial.print(range);
-
+	#if defined(VL6180X)
+	Serial.print("VL6180x Range: ");  Serial.print(vl.readRange());
+	#endif
+	#if defined(VCNL4010)
 	Serial.print("   VCNL4010 Proximity: "); Serial.print(vcnl.readProximity());
-	
+	#endif
 	#if defined(VCNL4040)
 	Serial.print("   VCNL4040 Proximity:"); Serial.print(vcnl4040.getProximity());
 	#endif
@@ -97,8 +104,9 @@ void loop()
 
 
 	#if defined(POLOLU)
-	Serial.print("   Pololu Proximity:");Serial.println(analogRead(A0));
+	Serial.print("   Pololu Proximity:");Serial.print(analogRead(A0));
 	#endif
+	Serial.println();
 	// Some error occurred, print it out!
 
 	delay(50);

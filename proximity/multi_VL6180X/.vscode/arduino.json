@@ -1,0 +1,5 @@
+{
+    "board": "arduino:mbed:nano33ble",
+    "sketch": "Four_VL6180x.ino",
+    "port": "COM7"
+}

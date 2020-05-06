@@ -18,8 +18,8 @@ class Eraser:
 	slope = [0.25,0.35,0.35,0.4]
 	def __init__(self):
 		# Make sure the COM port is right with the Arduino!!
-		self.COM = 'COM9'
-		self.serial = 9600
+		self.COM = 'COM7'
+		self.serial = 112500
 		self.arduino = serial.Serial(self.COM, self.serial, timeout=.1)
 		time.sleep(1)  # give the connection a second to settle
 
@@ -83,6 +83,10 @@ class Eraser:
 
 e = Eraser()
 i = 0
+curr = 0
 while True:
-
+	
 	print(e.get_separate_forces())
+	# t = time.time()
+	# print(t-curr)
+	# curr = t

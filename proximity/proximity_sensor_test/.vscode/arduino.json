@@ -1,0 +1,5 @@
+{
+    "board": "arduino:mbed:nano33ble",
+    "port": "COM7",
+    "sketch": "test_multiple_sensors\\test_multiple_sensors.ino"
+}

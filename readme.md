@@ -15,6 +15,8 @@ The main part of the Eraser project, the connection scehmatic is shown below:
  
 The Arduino is hooked up with 4 pressure sensors (their number is listed in the comment on top of the Eraser  code) and a LED matrix to display the forces on 4 sensors. Due to the difference of each sensor ( not all sensors are prefectly the same after all) and the weight design of the eraser, all four sensor's data are slightly biased. 
 
+The battery is laid under the breadboard and all you need to do to turn it one is to connect the red/black jumper wire to battery module.
+
 The official example code and documentations for sensors can be find here:
 https://learn.sparkfun.com/tutorials/force-sensitive-resistor-hookup-guide
 
@@ -58,14 +60,12 @@ two methods are supported:
 
 ```python
     e = Eraser()
-<<<<<<< Updated upstream
-    # returns a number, the total force of 4
-=======
+
     # returns a number, the total force of 4       
->>>>>>> Stashed changes
     e.get_total_force()
 
     # returns an list of 4 forces
     e.get_separate_forces()
 ```
-
+#### *Updated Apr. 2020 :*
+The calibration code have been removed to python code base and the arduino only send raw data to python
